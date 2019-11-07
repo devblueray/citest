@@ -1,0 +1,39 @@
+version: 2.1
+
+jobs:
+  ecrpush:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Install awscli
+          command: sudo pip install awscli
+      - run: 
+          name: Build image
+          command: docker build . -t 892173254882.dkr.ecr.us-east-1.amazonaws.com/hello-world
+      - run:
+          name: Install AWS Cli
+          command: sudo pip install awscli
+      - run:
+          name: Push image to ECR
+          command: |
+            $(aws ecr get-login --no-include-email --region us-east-1)
+            docker push 892173254882.dkr.ecr.us-east-1.amazonaws.com/hello-world
+      - run:
+          name: Install AWS EB CLI
+          command: sudo pip install awsebcli
+      - run: 
+          name: Deploy Docker Container
+          command: cd EBDeploy && eb deploy helloworld-prod --timeout 55
+
+ 
+workflows:
+  version: 2.1
+  build-and-deploy:
+    jobs:
+      - ecrpush:
+          filters:
+            branches:
+              only: master
